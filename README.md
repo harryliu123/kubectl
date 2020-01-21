@@ -21,41 +21,12 @@ sudo docker build -t kubectl kubectl/docker/
 # Creating a namespace demo
 kubectl create ns demo
 
+
 # Set a service account and binding a pod reader role 
-cat<<EOF | kubectl apply -f -
-# Creating a new service account jojo in the "demo" namespace 
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: jojo
-  namespace: demo
----
-# Pod reader role
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  namespace: demo
-  name: pod-reader
-rules:
-- apiGroups: [""] 
-  resources: ["pods"]
-  verbs: ["get", "watch", "list"]
----
-# Allows user jojo to read pods in the "demo" namespace.
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: pod-readers
-  namespace: demo
-subjects:
-- kind: ServiceAccount
-  name: jojo
-  namespace: demo
-roleRef:
-  kind: Role 
-  name: pod-reader 
-  apiGroup: rbac.authorization.k8s.io
-EOF
+kubectl create serviceaccount jojo -n=demo
+kubectl create role pod-reader --verb=get --verb=list --verb=watch --resource=pods -n=demo
+kubectl create rolebinding pod-readers --role=pod-reader --serviceaccount=demo:jojo --namespace=demo
+
 
 # Running a demo pod with serviceaccount: jojo
 cat <<EOF | kubectl apply -f -
